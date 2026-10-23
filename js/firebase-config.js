@@ -5,13 +5,13 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:0000000000000000"
+  apiKey: "AIzaSyD4x7Q7N0Q6-XY8Si5pr_IHQF0dWOfh-co",
+  authDomain: "jkunfilteredx.firebaseapp.com",
+  databaseURL: "https://jkunfilteredx-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "jkunfilteredx",
+  storageBucket: "jkunfilteredx.firebasestorage.app",
+  messagingSenderId: "735727117979",
+  appId: "1:735727117979:web:0e661614134349839ec83e"
 };
 
 export const configured = !firebaseConfig.apiKey.startsWith('YOUR_');

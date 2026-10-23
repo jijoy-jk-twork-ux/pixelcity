@@ -1,0 +1,16 @@
+{
+ "name": "Pixel City",
+ "width": 12800,
+ "height": 9600,
+ "chunkSize": 1024,
+ "seed": 1337,
+ "spawn": {
+  "x": 6656,
+  "y": 4608
+ },
+ "chunkFiles": [
+  "6_4",
+  "6_3",
+  "7_4"
+ ]
+}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel City – chunk generator</title>
+<style>body{font:16px monospace;background:#1d1a2b;color:#fff4d6;max-width:640px;margin:24px auto;padding:0 14px}
+input,button{font:inherit;padding:8px;margin:4px 6px 4px 0}button{background:#f2c14e;border:3px solid #000;cursor:pointer}pre{background:#000;padding:10px;overflow:auto}</style></head>
+<body>
+<h2>Pixel City chunk generator</h2>
+<p>Builds <code>chunk_{cx}_{cy}.json</code> for every chunk (same seeded generator the game uses as fallback), then downloads them as one ZIP.
+Unzip into <code>/data/chunks/</code>, then paste the printed <code>chunkFiles</code> list into <code>/data/world.json</code>. Edit any JSON by hand to customise a chunk.</p>
+<label>Chunk size <input id="cs" type="number" value="1024"></label>
+<label>Cols <input id="cols" type="number" value="12"></label>
+<label>Rows <input id="rows" type="number" value="9"></label>
+<label>Seed <input id="seed" type="number" value="1337"></label><br>
+<button id="go">Generate ZIP</button><button id="one">Preview chunk 6_4 (JSON)</button>
+<pre id="log">Ready.</pre>
+<script type="module">
+import { generateChunk } from '../js/chunkgen.js';
+const $ = id => document.getElementById(id), log = t => { $('log').textContent = t; };
+function meta() { const cs = +$('cs').value, cols = +$('cols').value, rows = +$('rows').value;
+  return { name: 'Pixel City', width: cols * cs, height: rows * cs, chunkSize: cs, seed: +$('seed').value, spawn: { x: Math.floor(cols / 2) * cs + cs / 2, y: Math.floor(rows / 2) * cs + cs / 2 }, chunkFiles: [] }; }
+const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = crcT[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files) {            // minimal STORE-only zip writer
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  for (const [name, text] of files) {
+    const n = enc.encode(name), d = enc.encode(text), c = crc(d), h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint32(14, c, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, n.length, true);
+    parts.push(h.buffer, n, d);
+    const e = new DataView(new ArrayBuffer(46));
+    e.setUint32(0, 0x02014b50, true); e.setUint16(4, 20, true); e.setUint16(6, 20, true); e.setUint32(16, c, true); e.setUint32(20, d.length, true); e.setUint32(24, d.length, true); e.setUint16(28, n.length, true); e.setUint32(42, off, true);
+    cen.push(e.buffer, n); off += 30 + n.length + d.length;
+  }
+  const csz = cen.reduce((a, b) => a + b.byteLength, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, csz, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, end.buffer], { type: 'application/zip' });
+}
+function save(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+$('go').onclick = () => {
+  const m = meta(), files = [], names = [];
+  for (let cy = 0; cy < m.height / m.chunkSize; cy++) for (let cx = 0; cx < m.width / m.chunkSize; cx++) { files.push([`chunk_${cx}_${cy}.json`, JSON.stringify(generateChunk(cx, cy, m))]); names.push(`${cx}_${cy}`); }
+  m.chunkFiles = names; files.push(['world.json', JSON.stringify(m, null, 1)]);
+  save(zip(files), 'pixel-city-chunks.zip'); log(`${names.length} chunks zipped (world.json included).\nchunkFiles = ${JSON.stringify(names)}`);
+};
+$('one').onclick = () => log(JSON.stringify(generateChunk(6, 4, meta()), null, 1));
+</script></body></html>
